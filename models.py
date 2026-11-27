@@ -1,5 +1,5 @@
 from datetime import datetime, date
-from sqlalchemy import Column, Integer, String, Text, DateTime, Date, ForeignKey, Boolean
+from sqlalchemy import Column, Integer, String, Text, Float, Boolean, Date, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
 from database import Base
 
@@ -17,6 +17,7 @@ class UserDB(Base):
     daily_used = Column(Integer, default=0, nullable=False)
     last_usage_date = Column(Date, default=date.today, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
+    payments = relationship("Payment", back_populates="user", cascade="all, delete-orphan")
 
     scenarios = relationship("ScenarioDB", back_populates="owner", cascade="all, delete-orphan")
 
@@ -36,3 +37,18 @@ class ScenarioDB(Base):
     user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
 
     owner = relationship("UserDB", back_populates="scenarios")
+
+
+
+class Payment(Base):
+    __tablename__ = "payments"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    plan = Column(String, nullable=False)          # 'pro' або 'business'
+    amount = Column(Float, nullable=False)         # 99.00 або 199.00
+    card_last4 = Column(String(4), nullable=False) # останні 4 цифри картки (напр. '7788')
+    status = Column(String, default="success")     # 'success'
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    user = relationship("User", back_populates="payments")
