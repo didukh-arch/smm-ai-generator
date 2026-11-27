@@ -1,26 +1,24 @@
-from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey
+from datetime import datetime, date
+from sqlalchemy import Column, Integer, String, Text, DateTime, Date, ForeignKey, Boolean
 from sqlalchemy.orm import relationship
-from datetime import datetime
 from database import Base
+
 
 class UserDB(Base):
     __tablename__ = "users"
 
     id = Column(Integer, primary_key=True, index=True)
-    username = Column(String(100), unique=True, nullable=False)
-    email = Column(String(255), unique=True, nullable=False)
+    first_name = Column(String(100), nullable=False)
+    last_name = Column(String(100), nullable=False)
+    email = Column(String(255), unique=True, index=True, nullable=False)
+    hashed_password = Column(String(255), nullable=False)
+    plan = Column(String(50), default="free", nullable=False)  # free, pro, business
+    plan_end_date = Column(Date, nullable=True)  # Дата завершення платного абонемента
+    daily_used = Column(Integer, default=0, nullable=False)
+    last_usage_date = Column(Date, default=date.today, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
 
-    scenarios = relationship("ScenarioDB", back_populates="author")
-
-
-class PlatformDB(Base):
-    __tablename__ = "platforms"
-
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String(100), unique=True, nullable=False)  
-
-    scenarios = relationship("ScenarioDB", back_populates="platform")
+    scenarios = relationship("ScenarioDB", back_populates="owner", cascade="all, delete-orphan")
 
 
 class ScenarioDB(Base):
@@ -28,12 +26,13 @@ class ScenarioDB(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     topic = Column(String(255), nullable=False)
+    content_type = Column(String(50), default="scenario", nullable=False)
+    option_label = Column(String(100), default="20 с", nullable=False)
     tone = Column(String(100), nullable=False)
     content = Column(Text, nullable=False)
+    notes = Column(Text, default="", nullable=False)
+    is_favorite = Column(Boolean, default=False, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
-
     user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
-    platform_id = Column(Integer, ForeignKey("platforms.id"), nullable=True)
 
-    author = relationship("UserDB", back_populates="scenarios")
-    platform = relationship("PlatformDB", back_populates="scenarios")
+    owner = relationship("UserDB", back_populates="scenarios")
